@@ -32,7 +32,6 @@ public class PotionFingers {
     @EventHandler
     public void preInit(FMLPreInitializationEvent event) {
         ring = new ItemRing();
-        MinecraftForge.EVENT_BUS.register(ring);
 
         RecipeHandler.addOreDictRecipe(new ItemStack(ring),
                 "LG ", "G G", " G ",
