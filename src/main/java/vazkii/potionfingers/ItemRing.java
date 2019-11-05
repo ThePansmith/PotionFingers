@@ -52,8 +52,9 @@ public class ItemRing extends ItemMod implements IBauble, IItemColorProvider {
     public void getSubItems(CreativeTabs tab, NonNullList<ItemStack> subItems) {
         if (tab == getCreativeTab()) {
             subItems.add(new ItemStack(this));
-            for (Potion p : PotionFingers.DEFAULT_EFFECTS)
+            for (Potion p : PotionFingers.DEFAULT_EFFECTS) {
                 subItems.add(getRingForPotion(p));
+            }
         }
     }
 
@@ -67,8 +68,9 @@ public class ItemRing extends ItemMod implements IBauble, IItemColorProvider {
         String name = super.getItemStackDisplayName(stack);
         Potion p = getPotion(stack);
         String potionName = "N/A";
-        if (p != null)
+        if (p != null) {
             potionName = I18n.translateToLocal(p.getName());
+        }
 
         return String.format(name, potionName);
     }
@@ -81,8 +83,9 @@ public class ItemRing extends ItemMod implements IBauble, IItemColorProvider {
     }
 
     public static Potion getPotion(ItemStack stack) {
-        if (stack == null)
+        if (stack == null) {
             return null;
+        }
 
         String effect = ItemNBTHelper.getString(stack, TAG_POTION_EFFECT, "");
         if (effect.isEmpty()) {
@@ -98,8 +101,9 @@ public class ItemRing extends ItemMod implements IBauble, IItemColorProvider {
         return (stack, i) -> {
             if (i != 0) {
                 Potion p = getPotion(stack);
-                if (p != null)
+                if (p != null) {
                     return p.getLiquidColor();
+                }
             }
 
             return 0xFFFFFF;
@@ -124,11 +128,14 @@ public class ItemRing extends ItemMod implements IBauble, IItemColorProvider {
     }
 
     public void updatePotionStatus(EntityLivingBase player, ItemStack ring, boolean unequipping) {
-        if (player.world.isRemote) return;
+        if (player.world.isRemote) {
+            return;
+        }
 
         Potion potion = getPotion(ring);
-        if (potion == null || !(player instanceof EntityPlayer))
+        if (potion == null || !(player instanceof EntityPlayer)) {
             return;
+        }
 
         IBaublesItemHandler inv = BaublesApi.getBaublesHandler((EntityPlayer) player);
 
