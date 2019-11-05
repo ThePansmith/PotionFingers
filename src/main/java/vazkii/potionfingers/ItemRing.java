@@ -14,6 +14,8 @@ import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.translation.I18n;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import vazkii.arl.interf.IItemColorProvider;
@@ -23,29 +25,31 @@ import vazkii.arl.util.ItemNBTHelper;
 public class ItemRing extends ItemMod implements IBauble, IItemColorProvider {
 
 	private static final String TAG_POTION_EFFECT = "effect";
-	
+
 	private static final String[] VARIANTS = new String[] {
 		"ring_disabled",
 		"ring_enabled"
 	};
-	
+	public static final int EFFECT_DURATION = 199;
+	public static final int EFFECT_REFRESH_RATE = EFFECT_DURATION / 2;
+
 	public ItemRing() {
 		super("ring", VARIANTS);
 		setCreativeTab(CreativeTabs.BREWING);
 		setMaxStackSize(1);
 		setHasSubtypes(true);
 	}
-	
+
 	@Override
 	public String getModNamespace() {
 		return PotionFingers.MOD_ID;
 	}
-	
+
 	@Override
 	public String getUniqueModel() {
 		return "ring";
 	}
-	
+
 	@Override
 	public void getSubItems(CreativeTabs tab, NonNullList<ItemStack> subItems) {
 		if(tab == getCreativeTab()) {
@@ -54,7 +58,7 @@ public class ItemRing extends ItemMod implements IBauble, IItemColorProvider {
 				subItems.add(getRingForPotion(p));
 		}
 	}
-	
+
 	@Override
 	public boolean hasEffect(ItemStack stack) {
 		return getPotion(stack) != null;
@@ -67,25 +71,26 @@ public class ItemRing extends ItemMod implements IBauble, IItemColorProvider {
 		String potionName = "N/A";
 		if(p != null)
 			potionName = I18n.translateToLocal(p.getName());
-		
+
 		return String.format(name, potionName);
 	}
-	
+
 	public static ItemStack getRingForPotion(Potion potion) {
 		String id = potion.getRegistryName().toString();
 		ItemStack stack = new ItemStack(PotionFingers.ring, 1, 1);
 		ItemNBTHelper.setString(stack, TAG_POTION_EFFECT, id);
 		return stack;
 	}
-	
+
 	public static Potion getPotion(ItemStack stack) {
 		if(stack == null)
 			return null;
-		
+
 		String effect = ItemNBTHelper.getString(stack, TAG_POTION_EFFECT, "");
-		if(effect.isEmpty())
-			return null;
-		
+		if(effect.isEmpty()) {
+            return null;
+        }
+
 		return Potion.REGISTRY.getObject(new ResourceLocation(effect));
 	}
 
@@ -110,12 +115,42 @@ public class ItemRing extends ItemMod implements IBauble, IItemColorProvider {
 	public void onEquipped(ItemStack itemstack, EntityLivingBase player) {
 		updatePotionStatus(player, itemstack, false);
 	}
-	
+
 	@Override
 	public void onUnequipped(ItemStack itemstack, EntityLivingBase player) {
 		updatePotionStatus(player, itemstack, true);
 	}
-	
+
+    @SubscribeEvent
+    public void onTickPlayerTick(TickEvent.PlayerTickEvent event) {
+	    if (event.phase == TickEvent.Phase.START) return;
+	    if (event.side == Side.CLIENT) return;
+	    if (event.player.ticksExisted % EFFECT_REFRESH_RATE != 0) return;
+
+		EntityPlayer player = event.player;
+		IBaublesItemHandler inv = BaublesApi.getBaublesHandler(player);
+
+        for (int slot : BaubleType.RING.getValidSlots()) {
+            ItemStack ring1 = inv.getStackInSlot(slot);
+            if (ring1.getItem() == this) {
+                int level = 0;
+                Potion potion = getPotion(ring1);
+                for (int slot1 : BaubleType.RING.getValidSlots()) {
+                    ItemStack ring2 = inv.getStackInSlot(slot1);
+                    if (ring1 != ring2 && getPotion(ring2) == potion) {
+                        level++;
+                        break;
+                    }
+                }
+				addPotionEffect(player, level, potion);
+			}
+        }
+    }
+
+	private void addPotionEffect(EntityLivingBase player, int level, Potion potion) {
+		player.addPotionEffect(new PotionEffect(potion, EFFECT_DURATION, level, true, false));
+	}
+
 	public void updatePotionStatus(EntityLivingBase player, ItemStack ring, boolean unequipping) {
 	    Potion potion = getPotion(ring);
 		if(potion == null || !(player instanceof EntityPlayer))
@@ -136,13 +171,15 @@ public class ItemRing extends ItemMod implements IBauble, IItemColorProvider {
 		}
 		PotionEffect currentEffect = player.getActivePotionEffect(potion);
 		int currentLevel = currentEffect != null ? currentEffect.getAmplifier() : -1;
-		if (currentLevel != level) {
+		assert currentLevel <= level || currentEffect != null;
+		if (currentLevel > level && currentEffect.getDuration() <= EFFECT_DURATION) {
 			player.removePotionEffect(potion);
-			if(level != -1 && !player.world.isRemote)
-				player.addPotionEffect(new PotionEffect(potion, Integer.MAX_VALUE, level, true, false));
+		}
+		if(currentLevel != level && level != -1 && !player.world.isRemote) {
+			addPotionEffect(player, level, potion);
 		}
 	}
-	
+
 	@Override
 	public BaubleType getBaubleType(ItemStack arg0) {
 		return BaubleType.RING;

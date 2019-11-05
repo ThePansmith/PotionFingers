@@ -6,6 +6,7 @@ import net.minecraft.init.MobEffects;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.potion.Potion;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
@@ -31,7 +32,8 @@ public class PotionFingers {
 	@EventHandler
 	public void preInit(FMLPreInitializationEvent event) {
 		ring = new ItemRing();
-		
+		MinecraftForge.EVENT_BUS.register(ring);
+
 		RecipeHandler.addOreDictRecipe(new ItemStack(ring), 
 				"LG ", "G G", " G ",
 				'L', new ItemStack(Blocks.LAPIS_BLOCK),
