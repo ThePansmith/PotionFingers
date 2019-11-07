@@ -112,28 +112,24 @@ public class ItemRing extends ItemMod implements IBauble, IItemColorProvider {
 
     @Override
     public void onEquipped(ItemStack itemstack, EntityLivingBase player) {
-        updatePotionStatus(player, itemstack, false);
+        updatePotionStatus(player, getPotion(itemstack), itemstack, false);
     }
 
     @Override
     public void onUnequipped(ItemStack itemstack, EntityLivingBase player) {
-        updatePotionStatus(player, itemstack, true);
+        updatePotionStatus(player, getPotion(itemstack), itemstack, true);
     }
 
     @Override
     public void onWornTick(ItemStack itemstack, EntityLivingBase player) {
-        if (player.ticksExisted % EFFECT_REFRESH_RATE == 0) {
-            updatePotionStatus(player, itemstack, false);
+        Potion potion = getPotion(itemstack);
+        if (potion != null && (player.ticksExisted % EFFECT_REFRESH_RATE == 0 || !player.isPotionActive(potion))) {
+            updatePotionStatus(player, potion, itemstack, false);
         }
     }
 
-    public void updatePotionStatus(EntityLivingBase player, ItemStack ring, boolean unequipping) {
-        if (player.world.isRemote) {
-            return;
-        }
-
-        Potion potion = getPotion(ring);
-        if (potion == null || !(player instanceof EntityPlayer)) {
+    public void updatePotionStatus(EntityLivingBase player, Potion potion, ItemStack ring, boolean unequipping) {
+        if (potion == null || player.world.isRemote || !(player instanceof EntityPlayer)) {
             return;
         }
 
