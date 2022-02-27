@@ -1,7 +1,7 @@
 {
-	"parent": "item/generated",
-	"textures": { 
-		"layer0": "potionfingers:items/ring",
-		"layer1": "potionfingers:items/ring_gem"
-	}
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "potionfingers:items/ring",
+    "layer1": "potionfingers:items/ring_gem"
+  }
 }

@@ -1,17 +1,16 @@
 [
-{
-  "modid": "potionfingers",
-  "name": "Potion Fingers",
-  "description": "Adds Rings that apply potion effects to the player while worn. Comissioned by Welsknight.",
-  "version": "${version}",
-  "mcversion": "${mcversion}",
-  "logoFile": "",
-  "url": "https://www.youtube.com/user/welsknightgaming",
-  "updateUrl": "",
-  "authorList": ["Vazkii"],
-  "credits": "",
-  "parent": "",
-  "screenshots": [],
-  "dependencies": []
-}
+  {
+    "modid": "potionfingers",
+    "name": "Potion Fingers",
+    "description": "Adds Rings that apply potion effects to the player while worn. Comissioned by Welsknight.",
+    "version": "${version}",
+    "mcversion": "${mcversion}",
+    "logoFile": "",
+    "url": "https://www.youtube.com/user/welsknightgaming",
+    "updateUrl": "",
+    "authorList": [
+      "Vazkii",
+      "TechLord22"
+    ]
+  }
 ]
