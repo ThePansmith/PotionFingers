@@ -39,7 +39,6 @@ dependencies {
 
     // Hard-Deps
     deobfCompile "curse.maven:baubles-227083:2518667"
-    deobfCompile "curse.maven:autoreglib-250363:2746011"
 
     // JEI
     deobfCompile "curse.maven:jei-238222:3040523"
@@ -59,7 +58,7 @@ processResources {
         include 'mcmod.info'
 
         // replace version and mcversion
-        expand 'version':project.version, 'mcversion':project.minecraft.version
+        expand 'version': project.version, 'mcversion': project.minecraft.version
     }
 
     // copy everything else except the mcmod.info
