@@ -23,7 +23,7 @@ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 public class PotionFingers {
 
     public static final String MOD_ID = "potionfingers";
-    public static final String MOD_NAME = "Potion Fingers";
+    public static final String MOD_NAME = "Potion Fingers:Break The Barrier Edition";
     public static final String VERSION = "@VERSION@";
     public static final String DEPENDENCIES = "required-after:baubles;";
 
