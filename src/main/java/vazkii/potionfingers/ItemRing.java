@@ -206,7 +206,7 @@ public class ItemRing extends Item implements IBauble {
     }
 
     protected void updatePotionStatus(EntityLivingBase player, Potion potion, ItemStack stack, boolean unequipping) {
-        if (potion == null || player.world.isRemote || !(player instanceof EntityPlayer)) {
+        if (potion == null || player.getEntityWorld().isRemote || !(player instanceof EntityPlayer)) {
             return;
         }
 
@@ -236,19 +236,17 @@ public class ItemRing extends Item implements IBauble {
     }
 
     protected void updateDurabilityStatus(EntityLivingBase player, int durability, ItemStack stack) {
-        if (durability < 0 || player.world.isRemote || !(player instanceof EntityPlayer)) {
+        if (durability < 0 || player.getEntityWorld().isRemote || !(player instanceof EntityPlayer)) {
             return;
         }
 
-        if (!player.getEntityWorld().isRemote) {
-            if (durability - 1 >= 0) {
-                // reduce durability by 1 if there is durability left
-                getOrCreateNBTTag(stack).setInteger(TAG_DURABILITY, durability - 1);
-            } else {
-                // play the item breaking sound and then destroy the item
-                player.getEntityWorld().playSound(null, player.getPosition(), SoundEvents.ENTITY_ITEM_BREAK, SoundCategory.PLAYERS, 1.0F, 1.0F);
-                stack.setCount(0);
-            }
+        if (durability - 1 >= 0) {
+            // reduce durability by 1 if there is durability left
+            getOrCreateNBTTag(stack).setInteger(TAG_DURABILITY, durability - 1);
+        } else {
+            // play the item breaking sound and then destroy the item
+            player.getEntityWorld().playSound(null, player.getPosition(), SoundEvents.ENTITY_ITEM_BREAK, SoundCategory.PLAYERS, 1.0F, 1.0F);
+            stack.setCount(0);
         }
     }
 
