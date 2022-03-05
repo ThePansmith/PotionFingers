@@ -10,6 +10,7 @@ import net.minecraft.client.resources.I18n;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -17,6 +18,7 @@ import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.SoundCategory;
 import net.minecraftforge.client.event.ColorHandlerEvent;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.model.ModelLoader;
@@ -36,7 +38,11 @@ public class ItemRing extends Item implements IBauble {
 
     private static final String ITEM_NAME = "ring";
 
-    private static final String TAG_POTION_EFFECT = "effect";
+    protected static final String TAG_POTION_EFFECT = "effect";
+    protected static final String TAG_DURABILITY = "durability";
+    protected static final String TAG_MAX_DURABILITY = "maxDurability";
+
+    protected static final int NO_DURABILITY = -1;
 
     private static final String[] VARIANTS = new String[]{
             "ring_disabled",
@@ -64,12 +70,12 @@ public class ItemRing extends Item implements IBauble {
     @Nonnull
     @Override
     public String getTranslationKey(@Nonnull ItemStack stack) {
-        int dmg = stack.getItemDamage();
+        int dmg = super.getDamage(stack);
         String[] variants = getVariants();
 
         if (dmg >= variants.length)
-            return "item." + ITEM_NAME;
-        return "item." + variants[dmg];
+            return "item." + ITEM_NAME + ".name";
+        return "item." + variants[dmg] + ".name";
     }
 
     @Nonnull
@@ -100,9 +106,9 @@ public class ItemRing extends Item implements IBauble {
     @Nonnull
     @Override
     public String getItemStackDisplayName(@Nonnull ItemStack stack) {
-        String name = super.getItemStackDisplayName(stack);
-        Potion potion = getPotion(stack);
+        String name = getTranslationKey(stack);
         if (FMLCommonHandler.instance().getEffectiveSide() == Side.CLIENT) {
+            Potion potion = getPotion(stack);
             if (potion != null) {
                 return I18n.format(name, I18n.format(potion.getName()));
             }
@@ -134,8 +140,8 @@ public class ItemRing extends Item implements IBauble {
     }
 
     @Nullable
-    public static Potion getPotion(ItemStack stack) {
-        if (stack == null || stack.isEmpty()) {
+    protected static Potion getPotion(@Nonnull ItemStack stack) {
+        if (stack.isEmpty()) {
             return null;
         }
 
@@ -145,6 +151,19 @@ public class ItemRing extends Item implements IBauble {
         }
 
         return Potion.REGISTRY.getObject(new ResourceLocation(effect));
+    }
+
+    protected static int getDurability(@Nonnull ItemStack stack) {
+        if (stack.isEmpty()) {
+            return NO_DURABILITY;
+        }
+
+        NBTTagCompound tagCompound = getOrCreateNBTTag(stack);
+        if (tagCompound.hasKey(TAG_DURABILITY)) {
+            return tagCompound.getInteger(TAG_DURABILITY);
+        }
+
+        return NO_DURABILITY;
     }
 
     @SideOnly(Side.CLIENT)
@@ -172,14 +191,21 @@ public class ItemRing extends Item implements IBauble {
     }
 
     @Override
-    public void onWornTick(ItemStack itemstack, EntityLivingBase player) {
-        Potion potion = getPotion(itemstack);
+    public void onWornTick(ItemStack stack, EntityLivingBase player) {
+        Potion potion = getPotion(stack);
         if (potion != null && (player.ticksExisted % EFFECT_REFRESH_RATE == 0 || !player.isPotionActive(potion))) {
-            updatePotionStatus(player, potion, itemstack, false);
+            // update the potion effect
+            updatePotionStatus(player, potion, stack, false);
+
+            // update the durability if it is used on this ring
+            int durability = getDurability(stack);
+            if (durability > NO_DURABILITY) {
+                updateDurabilityStatus(player, durability, stack);
+            }
         }
     }
 
-    public void updatePotionStatus(EntityLivingBase player, Potion potion, ItemStack ring, boolean unequipping) {
+    protected void updatePotionStatus(EntityLivingBase player, Potion potion, ItemStack stack, boolean unequipping) {
         if (potion == null || player.world.isRemote || !(player instanceof EntityPlayer)) {
             return;
         }
@@ -189,7 +215,7 @@ public class ItemRing extends Item implements IBauble {
         int level = -1;
         for (int slot : BaubleType.RING.getValidSlots()) {
             ItemStack baubleRing = inv.getStackInSlot(slot);
-            Potion baublePotion = unequipping && ring == baubleRing ? null : getPotion(baubleRing);
+            Potion baublePotion = unequipping && stack == baubleRing ? null : getPotion(baubleRing);
             if (baublePotion == potion) {
                 level++;
             }
@@ -207,6 +233,64 @@ public class ItemRing extends Item implements IBauble {
         if (level != -1) {
             player.addPotionEffect(new PotionEffect(potion, EFFECT_DURATION, level, true, false));
         }
+    }
+
+    protected void updateDurabilityStatus(EntityLivingBase player, int durability, ItemStack stack) {
+        if (durability < 0 || player.world.isRemote || !(player instanceof EntityPlayer)) {
+            return;
+        }
+
+        if (!player.getEntityWorld().isRemote) {
+            if (durability - 1 >= 0) {
+                // reduce durability by 1 if there is durability left
+                getOrCreateNBTTag(stack).setInteger(TAG_DURABILITY, durability - 1);
+            } else {
+                // play the item breaking sound and then destroy the item
+                player.getEntityWorld().playSound(null, player.getPosition(), SoundEvents.ENTITY_ITEM_BREAK, SoundCategory.PLAYERS, 1.0F, 1.0F);
+                stack.setCount(0);
+            }
+        }
+    }
+
+    @Override
+    public boolean showDurabilityBar(@Nonnull ItemStack stack) {
+        if (stack.hasTagCompound()) {
+            //noinspection ConstantConditions
+            return stack.getTagCompound().hasKey(TAG_DURABILITY);
+        }
+        return super.showDurabilityBar(stack);
+    }
+
+    @Override
+    public double getDurabilityForDisplay(@Nonnull ItemStack stack) {
+        return getDamage(stack) * 1.0D / getMaxDamage(stack);
+    }
+
+    @Override
+    public int getMaxDamage(@Nonnull ItemStack stack) {
+        //noinspection ConstantConditions
+        if (stack.hasTagCompound() && stack.getTagCompound().hasKey(TAG_MAX_DURABILITY)) {
+            return stack.getTagCompound().getInteger(TAG_MAX_DURABILITY);
+        }
+        return super.getMaxDamage(stack);
+    }
+
+    @Override
+    public int getDamage(@Nonnull ItemStack stack) {
+        //noinspection ConstantConditions
+        if (stack.hasTagCompound() && stack.getTagCompound().hasKey(TAG_DURABILITY)) {
+            return getMaxDamage(stack) - stack.getTagCompound().getInteger(TAG_DURABILITY);
+        }
+        return super.getDamage(stack);
+    }
+
+    @Override
+    public boolean isDamaged(@Nonnull ItemStack stack) {
+        //noinspection ConstantConditions
+        if (stack.hasTagCompound() && stack.getTagCompound().hasKey(TAG_DURABILITY)) {
+            return stack.getTagCompound().getInteger(TAG_DURABILITY) >= 0;
+        }
+        return super.isDamaged(stack);
     }
 
     @Override
