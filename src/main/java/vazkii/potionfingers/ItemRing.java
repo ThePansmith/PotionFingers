@@ -252,11 +252,7 @@ public class ItemRing extends Item implements IBauble {
 
     @Override
     public boolean showDurabilityBar(@Nonnull ItemStack stack) {
-        if (stack.hasTagCompound()) {
-            //noinspection ConstantConditions
-            return stack.getTagCompound().hasKey(TAG_DURABILITY);
-        }
-        return super.showDurabilityBar(stack);
+        return isDamaged(stack);
     }
 
     @Override
@@ -286,9 +282,9 @@ public class ItemRing extends Item implements IBauble {
     public boolean isDamaged(@Nonnull ItemStack stack) {
         //noinspection ConstantConditions
         if (stack.hasTagCompound() && stack.getTagCompound().hasKey(TAG_DURABILITY)) {
-            return stack.getTagCompound().getInteger(TAG_DURABILITY) >= 0;
+            return getDamage(stack) > 0;
         }
-        return super.isDamaged(stack);
+        return false;
     }
 
     @Override
