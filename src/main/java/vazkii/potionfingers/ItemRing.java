@@ -49,8 +49,8 @@ public class ItemRing extends Item implements IBauble {
             "ring_enabled"
     };
 
-    public static final int EFFECT_DURATION = 199;
-    public static final int EFFECT_REFRESH_RATE = EFFECT_DURATION / 2;
+    public static final int EFFECT_DURATION = 300;
+    public static final int EFFECT_REFRESH_RATE = 60;
 
     public ItemRing() {
         this.setTranslationKey(ITEM_NAME);
