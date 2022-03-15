@@ -6,6 +6,7 @@
 <ul>
 <li>The ability to add durability to rings</li>
 <li>Removal of&nbsp;autoreglib as a dependency</li>
+<li>Fixed Nightvision</li>
 <li>A Code cleanup</li>
 <li>Improved Maven</li>
 <li>... and more to come!&nbsp;</li>
